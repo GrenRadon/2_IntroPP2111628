@@ -1,3 +1,4 @@
+#include "mpi.h"
 # include <stdlib.h>
 # include <stdio.h>
 # include <time.h>
@@ -113,6 +114,13 @@ int main ( int argc, char *argv[] )
     printf ( "  Enter N3, the number of columns in C.\n" );
     scanf ( "%d", &n3 );
   }
+
+  /* Obtain number of tasks and task ID */
+  MPI_Init(&argc,&argv);
+  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+  printf ("MPI task %d has started...\n", taskid);
+
 /*
   Record the amount of work.
   Each of the N1 * N3 entries of A requires N2 multiplies and N2 adds.
