@@ -59,9 +59,6 @@ int main ( int argc, char *argv[] )
 */
 {
 
-  char machine_name[MPI_MAX_PROCESSOR_NAME];
-  int MyId, N, namelenght;
-
   /*Original code variables*/
   double *b;
   double *c;
