@@ -72,12 +72,15 @@ int main ( int argc, char *argv[] )
   int n2;
   int n3;
   int seed;
+  int rc;
   double time_estimate;
 
   /*---------------------------*/
   int	taskid,	        /* task ID - also used as seed number */
   numtasks;	        /* task ID - also used as seed number */
 
+
+  MPI_Status Stat;
   /* Obtain number of tasks and task ID */
   /*LET's BEGIN THE MPI OPERATIONS*/
   MPI_Init(&argc,&argv);
@@ -87,10 +90,7 @@ int main ( int argc, char *argv[] )
   //N is the total number of nodes. Is the same for everybody.
 
   MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
-  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
-  MPI_Get_processor_name(machine_name,&namelenght);
-  printf ("MPI task %d has started...\n", taskid);
-  printf("Hi, I am process %d, from %d. I am in %s\n",MyId,N,machine_name);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
   timestamp ( );
 

@@ -3,8 +3,13 @@
 #SBATCH --partition=guane_24_cores
 #SBATCH --job-name=MPI_mxm
 #SBATCH --nodes=2
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=4 #This option advises the Slurm controller that
+  #job steps run within the allocation will launch a maximum of number
+  #tasks and to provide for sufficient resources.
+  #If used with the --ntasks option, the --ntasks option will take precedence
+  #and the --ntasks-per-node will be treated as a maximum count of tasks per node.
+#SBATCH --cpus-per-task=8 #Advise the Slurm controller that ensuing job steps will
+  #require ncpus number of processors per task.
 #SBATCH --ntasks-per-node=2
 #SBATCH --output=salida_MPI_MXM_%j.out
 #SBATCH --error=errores_MPI_MXM_%j.err
