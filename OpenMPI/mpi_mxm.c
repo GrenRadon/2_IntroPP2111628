@@ -90,7 +90,7 @@ int main ( int argc, char *argv[] )
   MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
   MPI_Get_processor_name(machine_name,&namelenght);
   printf ("MPI task %d has started...\n", taskid);
-  printf("Hi, I am process %d, from %d. I am in %s\n",MyID,N,machine_name);
+  printf("Hi, I am process %d, from %d. I am in %s\n",MyId,N,machine_name);
 
   timestamp ( );
 
@@ -269,7 +269,7 @@ int main ( int argc, char *argv[] )
   timestamp ( );
 
 /*FINALIZE MPI OPERATIONS*/
- 
+
 MPI_Finalize();
   return 0;
 }
