@@ -1,0 +1,34 @@
+
+**THIS IS A SERIAL IMPLEMENTATION - RUNNING IN GUANE CLUSTER**--------------
+
+//More than an hour!!
+
+
+**THIS IS AN OPENMP IMPLEMENTATION - PARALLELIZING IN GUANE CLUSTER**-------
+
+MXM:
+  Normal end of execution.
+
+Matrix B is 45000 by 45000
+  Matrix C is 45000 by 45000
+  Matrix A will be 45000 by 45000
+
+  Number of floating point operations = 1652728832
+  Estimated CPU time is 0.635665 seconds.
+
+  The number of processors available = 24
+  The number of threads available    = 24
+
+  Method     Cpu Seconds       MegaFlopS
+  ------  --------------  --------------
+  IJK           0.090000    18363.653689
+  IKJ           0.050000    33054.576640
+  JIK           0.050000    33054.576640
+  JKI           0.090000    18363.653689
+  KIJ           0.010000   165272.883200
+  KJI           0.010000   165272.883200
+
+MXM:
+  Normal end of execution.
+
+  **THIS IS AN OPENMPI IMPLEMENTATION - PARALLELIZING IN GUANE CLUSTER**------
