@@ -58,6 +58,11 @@ int main ( int argc, char *argv[] )
     rows and columns in the two matrices.
 */
 {
+
+  char machine_name[MPI_MAX_PROCESSOR_NAME];
+  int MyId, N, namelenght;
+
+  /*Original code variables*/
   double *b;
   double *c;
   double cpu_seconds;
@@ -68,6 +73,24 @@ int main ( int argc, char *argv[] )
   int n3;
   int seed;
   double time_estimate;
+
+  /*---------------------------*/
+  int	taskid,	        /* task ID - also used as seed number */
+  numtasks;	        /* task ID - also used as seed number */
+
+  /* Obtain number of tasks and task ID */
+  /*LET's BEGIN THE MPI OPERATIONS*/
+  MPI_Init(&argc,&argv);
+
+  /////////////////////////////////////////////////////
+  //MyID is the number in EACH processor. It is different for each node.
+  //N is the total number of nodes. Is the same for everybody.
+
+  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+  MPI_Get_processor_name(machine_name,&namelenght);
+  printf ("MPI task %d has started...\n", taskid);
+  printf("Hi, I am process %d, from %d. I am in %s\n",MyID,N,machine_name);
 
   timestamp ( );
 
@@ -115,11 +138,7 @@ int main ( int argc, char *argv[] )
     scanf ( "%d", &n3 );
   }
 
-  /* Obtain number of tasks and task ID */
-  MPI_Init(&argc,&argv);
-  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
-  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
-  printf ("MPI task %d has started...\n", taskid);
+
 
 /*
   Record the amount of work.
@@ -249,6 +268,9 @@ int main ( int argc, char *argv[] )
   printf ( "\n" );
   timestamp ( );
 
+/*FINALIZE MPI OPERATIONS*/
+ 
+MPI_Finalize();
   return 0;
 }
 /******************************************************************************/
