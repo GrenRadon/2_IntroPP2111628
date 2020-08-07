@@ -23,7 +23,7 @@ mpirun ./mpi_mxm 45000 45000 45000
 
 To execute properly our code in a Guane node we must log in first, once inside the front-end, we gotta enter to a guane node assigned randomly by typing "ssh guane".
 
-All settings are contained in the sbatch file so it's just to launch it by typing "sbatch mxn-mpi.sbatch". It's extremely necessary to note that we have to modify the .sbatch file at the very end since according to the scaled part,we can change it by changing the arguments, some examples of this are: "./mpi_mxm 100 100 100","./mpi_mxm 200 200 200", "./mpi_mxm 10000 10000 10000", "./mpi_mxm 30000 30000 30000"
+All settings are contained in the sbatch file so it's just to launch it by typing "sbatch mxn-mpi.sbatch". It's extremely necessary to note that we have to modify the .sbatch file at the very end since according to the scaled part,we can change it by changing the arguments, some examples of this are: "mpirun ./mpi_mxm 100 100 100","mpirun ./mpi_mxm 200 200 200", "mpirun ./mpi_mxm 10000 10000 10000", "mpirun ./mpi_mxm 30000 30000 30000"
 
 ## Future improvements: 
 
