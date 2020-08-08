@@ -1,28 +1,70 @@
 
 **THIS IS A SERIAL IMPLEMENTATION - RUNNING IN GUANE CLUSTER**--------------
 
-Matrix B is 2000 by 2000
-  Matrix C is 2000 by 2000
-  Matrix A will be 2000 by 2000
+07 August 2020 05:30:15 PM
 
-  Number of floating point operations = -1179869184
-  Estimated CPU time is -0.453796 seconds.
+MXM:
+  C version
+  Compute matrix-matrix product A = B * C
 
-  The number of processors available = 8
-  The number of threads available    = 8
+  Matrix B is 45000 by 45000
+  Matrix C is 45000 by 45000
+  Matrix A will be 45000 by 45000
+
+  Number of floating point operations = 1652728832
+07 August 2020 05:30:15 PM
+
+MXM:
+  C version
+  Compute matrix-matrix product A = B * C
+
+  Estimated CPU time is 0.635665 seconds.
+  Matrix B is 45000 by 45000
+  Matrix C is 45000 by 45000
+  Matrix A will be 45000 by 45000
+
+  Number of floating point operations = 1652728832
+  Estimated CPU time is 0.635665 seconds.
+07 August 2020 05:30:15 PM
+07 August 2020 05:30:15 PM
+
+07 August 2020 05:30:15 PM
+
+MXM:
+  C version
+  Compute matrix-matrix product A = B * C
+
+
+MXM:
+  C version
+  Compute matrix-matrix product A = B * C
+
+  Matrix B is 45000 by 45000
+  Matrix C is 45000 by 45000
+  Matrix B is 45000 by 45000
+  Matrix C is 45000 by 45000
+  Matrix A will be 45000 by 45000
+
+  Number of floating point operations = 1652728832
+  Matrix A will be 45000 by 45000
+
+  Number of floating point operations = 1652728832
+  Estimated CPU time is 0.635665 seconds.
+  Estimated CPU time is 0.635665 seconds.
 
   Method     Cpu Seconds       MegaFlopS
   ------  --------------  --------------
-  IJK          75.206447      -15.688405
-  IKJ         171.293599       -6.887993
-  JIK         107.549093      -10.970517
-  JKI          35.372366      -33.355676
-  KIJ         175.893450       -6.707863
-  KJI          36.211656      -32.582580
 
-MXM:
-  Normal end of execution.
-  
+  Method     Cpu Seconds       MegaFlopS
+  ------  --------------  --------------
+
+  Method     Cpu Seconds       MegaFlopS
+  ------  --------------  --------------
+
+  Method     Cpu Seconds       MegaFlopS
+  ------  --------------  --------------
+
+
 //More than an hour!!
 
 
