@@ -75,7 +75,6 @@ int main ( int argc, char *argv[] )
   int n2;
   int n3;
   int seed;
-  int rc;
   double time_estimate;
 
   /*---------------------------*/
@@ -85,7 +84,8 @@ int main ( int argc, char *argv[] )
   	source,                /* task id of message source */
   	dest,                  /* task id of message destination */
   	mtype,                 /* message type */
-  	rows,                  /* rows of matrix A sent to each worker */
+  	rows,
+    len,                  /* rows of matrix A sent to each worker */
   	averow, extra, offset, /* used to determine rows sent to each worker */
     i, j, k, rc;           /* misc */
     char hostname[MPI_MAX_PROCESSOR_NAME];
@@ -97,13 +97,15 @@ int main ( int argc, char *argv[] )
   MPI_Init(&argc,&argv);
 
   //get my rank
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 
   //Here we get the number of tasks which are saved in numtasks variable
   MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
 
   //This is for getting the proccesor name
   MPI_Get_processor_name(hostname,&len);
+
+  printf ("Number of tasks= %d My rank= %d Running on %s\n", numtasks,taskid,hostname);
 
   if (numtasks < 2 ) {
     printf("Need at least two MPI tasks. Quitting...\n");
@@ -194,6 +196,36 @@ int main ( int argc, char *argv[] )
       c = matgen ( n2, n3, &seed );
 
       /* Sending matrix's data to the worker tasks */
+      averow = n1/numworkers;
+      extra = n1%numworkers;
+      offset = 0;
+      mtype = FROM_MASTER;
+      for (dest=1; dest<=numworkers; dest++)
+      {
+         rows = (dest <= extra) ? averow+1 : averow;
+         //a flag for knowing the rows value
+         printf("here the rows : %d\n",rows);
+
+         printf("Sending %d rows to task %d offset=%d\n",rows,dest,offset);
+         MPI_Send(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+         MPI_Send(&rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+         MPI_Send(&b[offset+0*n1], rows*n2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+         MPI_Send(&c, n2*n3, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+         offset = offset + rows;
+      }
+
+      /* Receive results from worker tasks */
+      mtype = FROM_WORKER;
+      for (i=1; i<=numworkers; i++)
+      {
+         source = i;
+         MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+         MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+         MPI_Recv(&a[offset+0*n3], rows*NCB, MPI_DOUBLE, source, mtype,
+                  MPI_COMM_WORLD, &status);
+         printf("Received results from task %d\n",source);
+      }
+
 
    }
 
@@ -453,16 +485,31 @@ double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] )
 
   cpu_seconds = cpu_time ( );
 
-  for ( i = 0; i < n1; i++ )
-  {
-    for ( j = 0; j < n3; j++ )
-    {
-      for ( k = 0; k < n2; k++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, NCA*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+      for ( i = 0; i < n1; i++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( j = 0; j < n3; j++ )
+        {
+          for ( k = 0; k < n2; k++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
+
+
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 

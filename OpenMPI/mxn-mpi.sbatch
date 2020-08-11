@@ -26,7 +26,7 @@
   ##and then --nodes to a suitable value, and you would get one MPI rank
   ##per node, and then be able to run 12-way parallel MPI on each node
 
-#SBATCH --ntasks-per-node=2
+#SBATCH --ntasks-per-node=4
 
 #SBATCH --output=salida_MPI_MXM_%j.out
 
