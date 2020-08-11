@@ -3,7 +3,13 @@
 # include <stdio.h>
 # include <time.h>
 
+//Definition section
+#define FROM_MASTER 1          /* setting a message type */
+#define FROM_WORKER 2          /* setting a message type */
+#define MASTER 0
+
 int main ( int argc, char *argv[] );
+
 double cpu_time ( );
 double *matgen ( int m, int n, int *seed );
 double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] );
@@ -73,21 +79,40 @@ int main ( int argc, char *argv[] )
   double time_estimate;
 
   /*---------------------------*/
-  int	taskid,	        /* task ID - also used as seed number */
-  numtasks;	        /* task ID - also used as seed number */
+  int	numtasks,              /* number of tasks in partition */
+  	taskid,                /* a task identifier */
+  	numworkers,            /* number of worker tasks */
+  	source,                /* task id of message source */
+  	dest,                  /* task id of message destination */
+  	mtype,                 /* message type */
+  	rows,                  /* rows of matrix A sent to each worker */
+  	averow, extra, offset, /* used to determine rows sent to each worker */
+    i, j, k, rc;           /* misc */
+    char hostname[MPI_MAX_PROCESSOR_NAME];
 
 
-  MPI_Status Stat;
-  /* Obtain number of tasks and task ID */
+  MPI_Status status;
+
   /*LET's BEGIN THE MPI OPERATIONS*/
   MPI_Init(&argc,&argv);
 
-  /////////////////////////////////////////////////////
-  //MyID is the number in EACH processor. It is different for each node.
-  //N is the total number of nodes. Is the same for everybody.
-
-  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+  //get my rank
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+  //Here we get the number of tasks which are saved in numtasks variable
+  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+
+  //This is for getting the proccesor name
+  MPI_Get_processor_name(hostname,&len);
+
+  if (numtasks < 2 ) {
+    printf("Need at least two MPI tasks. Quitting...\n");
+    MPI_Abort(MPI_COMM_WORLD, rc);
+    exit(1);
+    }
+  //Here we're saying that, taking into account the counter starts from 0
+  //and not from 1, our numworkers counter will be setted to numtasks-1
+  numworkers = numtasks-1;
 
   timestamp ( );
 
@@ -151,12 +176,28 @@ int main ( int argc, char *argv[] )
   printf ( "  Number of floating point operations = %d\n", flop_count );
   time_estimate = ( double ) ( flop_count ) / 2.6E+09;
   printf ( "  Estimated CPU time is %f seconds.\n", time_estimate );
-/*
-  Set B and C.
-*/
-  seed = 1325;
-  b = matgen ( n1, n2, &seed );
-  c = matgen ( n2, n3, &seed );
+
+
+
+
+  /**************************** master task ************************************/
+  if (taskid == MASTER)
+  {
+    printf("mpi_mm has started with %d tasks.\n",numtasks);
+    printf("Initializing arrays...\n");
+
+    /*
+      Set B and C.
+    */
+      seed = 1325;
+      b = matgen ( n1, n2, &seed );
+      c = matgen ( n2, n3, &seed );
+
+      /* Sending matrix's data to the worker tasks */
+
+   }
+
+
   printf ( "\n" );
   printf ( "  Method     Cpu Seconds       MegaFlopS\n" );
   printf ( "  ------  --------------  --------------\n" );
