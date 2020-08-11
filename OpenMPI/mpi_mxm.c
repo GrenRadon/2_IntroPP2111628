@@ -12,12 +12,18 @@ int main ( int argc, char *argv[] );
 
 double cpu_time ( );
 double *matgen ( int m, int n, int *seed );
-double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] );
-double mxm_ikj ( int n1, int n2, int n3, double b[], double c[] );
-double mxm_jik ( int n1, int n2, int n3, double b[], double c[] );
-double mxm_jki ( int n1, int n2, int n3, double b[], double c[] );
-double mxm_kij ( int n1, int n2, int n3, double b[], double c[] );
-double mxm_kji ( int n1, int n2, int n3, double b[], double c[] );
+double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid);
+double mxm_ikj ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid );
+double mxm_jik ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid );
+double mxm_jki ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid );
+double mxm_kij ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid );
+double mxm_kji ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid );
 void timestamp ( );
 
 /******************************************************************************/
@@ -62,10 +68,19 @@ int main ( int argc, char *argv[] )
 
     Command line argument, int N1, N2, N3, defines the number of
     rows and columns in the two matrices.
+
+  OpenMP Modification:
+    10 de Agosto 2020 by Julián Eduardo Villamizar Peña,
+    Universidad Industrial de Santander,
+    julianeduardovillamizarpena_14021994@outlook.com,
+    This OpenMPI Modification makes a parallelization of
+    the original Code taking into account some modifications
+    proposed by a parallelization course available on.
 */
 {
 
   /*Original code variables*/
+  double *a;
   double *b;
   double *c;
   double cpu_seconds;
@@ -89,32 +104,6 @@ int main ( int argc, char *argv[] )
   	averow, extra, offset, /* used to determine rows sent to each worker */
     i, j, k, rc;           /* misc */
     char hostname[MPI_MAX_PROCESSOR_NAME];
-
-
-  MPI_Status status;
-
-  /*LET's BEGIN THE MPI OPERATIONS*/
-  MPI_Init(&argc,&argv);
-
-  //get my rank
-  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
-
-  //Here we get the number of tasks which are saved in numtasks variable
-  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
-
-  //This is for getting the proccesor name
-  MPI_Get_processor_name(hostname,&len);
-
-  printf ("Number of tasks= %d My rank= %d Running on %s\n", numtasks,taskid,hostname);
-
-  if (numtasks < 2 ) {
-    printf("Need at least two MPI tasks. Quitting...\n");
-    MPI_Abort(MPI_COMM_WORLD, rc);
-    exit(1);
-    }
-  //Here we're saying that, taking into account the counter starts from 0
-  //and not from 1, our numworkers counter will be setted to numtasks-1
-  numworkers = numtasks-1;
 
   timestamp ( );
 
@@ -181,6 +170,30 @@ int main ( int argc, char *argv[] )
 
 
 
+  MPI_Status status;
+
+  /*LET's BEGIN THE MPI OPERATIONS*/
+  MPI_Init(&argc,&argv);
+
+  //get my rank
+  MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+
+  //Here we get the number of tasks which are saved in numtasks variable
+  MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+
+  //This is for getting the proccesor name
+  MPI_Get_processor_name(hostname,&len);
+
+  printf ("Number of tasks= %d My rank= %d Running on %s\n", numtasks,taskid,hostname);
+
+  if (numtasks < 2 ) {
+    printf("Need at least two MPI tasks. Quitting...\n");
+    MPI_Abort(MPI_COMM_WORLD, rc);
+    exit(1);
+    }
+  //Here we're saying that, taking into account the counter starts from 0
+  //and not from 1, our numworkers counter will be setted to numtasks-1
+  numworkers = numtasks-1;
 
   /**************************** master task ************************************/
   if (taskid == MASTER)
@@ -214,6 +227,117 @@ int main ( int argc, char *argv[] )
          offset = offset + rows;
       }
 
+      printf ( "\n" );
+      printf ( "  Method     Cpu Seconds       MegaFlopS\n" );
+      printf ( "  ------  --------------  --------------\n" );
+    /*
+      IJK
+    */
+      cpu_seconds = mxm_ijk ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  IJK     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      IKJ
+    */
+      cpu_seconds = mxm_ikj ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  IKJ     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      JIK
+    */
+      cpu_seconds = mxm_jik ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  JIK     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      JKI
+    */
+      cpu_seconds = mxm_jki ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  JKI     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      KIJ
+    */
+      cpu_seconds = mxm_kij ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  KIJ     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      KJI
+    */
+      cpu_seconds = mxm_kji ( n1, n2, n3, b, c, offset, mtype, status, rows, taskid);
+
+      if ( 0.0 < cpu_seconds )
+      {
+        mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
+      }
+      else
+      {
+        mflops = -1.0;
+      }
+
+      printf ( "  KJI     %14f  %14f\n", cpu_seconds, mflops );
+    /*
+      Deallocate arrays.
+    */
+      free ( b );
+      free ( c );
+    /*
+      Terminate.
+    */
+      printf ( "\n" );
+      printf ( "MXM:\n" );
+      printf ( "  Normal end of execution.\n" );
+
+      printf ( "\n" );
+      timestamp ( );
+
+
+
+
       /* Receive results from worker tasks */
       mtype = FROM_WORKER;
       for (i=1; i<=numworkers; i++)
@@ -221,8 +345,8 @@ int main ( int argc, char *argv[] )
          source = i;
          MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
          MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
-         MPI_Recv(&a[offset+0*n3], rows*NCB, MPI_DOUBLE, source, mtype,
-                  MPI_COMM_WORLD, &status);
+         MPI_Recv(&a[offset+0*n1], rows*n3, MPI_DOUBLE, source, mtype,
+           MPI_COMM_WORLD, &status);
          printf("Received results from task %d\n",source);
       }
 
@@ -230,113 +354,6 @@ int main ( int argc, char *argv[] )
    }
 
 
-  printf ( "\n" );
-  printf ( "  Method     Cpu Seconds       MegaFlopS\n" );
-  printf ( "  ------  --------------  --------------\n" );
-/*
-  IJK
-*/
-  cpu_seconds = mxm_ijk ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  IJK     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  IKJ
-*/
-  cpu_seconds = mxm_ikj ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  IKJ     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  JIK
-*/
-  cpu_seconds = mxm_jik ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  JIK     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  JKI
-*/
-  cpu_seconds = mxm_jki ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  JKI     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  KIJ
-*/
-  cpu_seconds = mxm_kij ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  KIJ     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  KJI
-*/
-  cpu_seconds = mxm_kji ( n1, n2, n3, b, c );
-
-  if ( 0.0 < cpu_seconds )
-  {
-    mflops = ( double ) ( flop_count ) / cpu_seconds / 1000000.0;
-  }
-  else
-  {
-    mflops = -1.0;
-  }
-
-  printf ( "  KJI     %14f  %14f\n", cpu_seconds, mflops );
-/*
-  Deallocate arrays.
-*/
-  free ( b );
-  free ( c );
-/*
-  Terminate.
-*/
-  printf ( "\n" );
-  printf ( "MXM:\n" );
-  printf ( "  Normal end of execution.\n" );
-
-  printf ( "\n" );
-  timestamp ( );
 
 /*FINALIZE MPI OPERATIONS*/
 
@@ -437,7 +454,8 @@ double *matgen ( int m, int n, int *seed )
 }
 /******************************************************************************/
 
-double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] , int offset,
+                  int mtype, MPI_Status status, int rows, int taskid)
 
 /******************************************************************************/
 /*
@@ -490,8 +508,8 @@ double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] )
       mtype = FROM_MASTER;
       MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
       MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
-      MPI_Recv(&b, rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
-      MPI_Recv(&c, NCA*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
 
       for ( i = 0; i < n1; i++ )
       {
@@ -506,7 +524,7 @@ double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] )
       mtype = FROM_WORKER;
       MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
       MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
-      MPI_Send(&a, rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
    }
 
 
@@ -519,7 +537,8 @@ double mxm_ijk ( int n1, int n2, int n3, double b[], double c[] )
 }
 /******************************************************************************/
 
-double mxm_ikj ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_ikj ( int n1, int n2, int n3, double b[], double c[], int offset,
+                  int mtype, MPI_Status status, int rows, int taskid )
 
 /******************************************************************************/
 /*
@@ -565,18 +584,36 @@ double mxm_ikj ( int n1, int n2, int n3, double b[], double c[] )
     }
   }
 
+
   cpu_seconds = cpu_time ( );
 
-  for ( i = 0; i < n1; i++ )
-  {
-    for ( k = 0; k < n2; k++ )
-    {
-      for ( j = 0; j < n3; j++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+
+      for ( i = 0; i < n1; i++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( k = 0; k < n2; k++ )
+        {
+          for ( j = 0; j < n3; j++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
+
+
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 
@@ -586,7 +623,8 @@ double mxm_ikj ( int n1, int n2, int n3, double b[], double c[] )
 }
 /******************************************************************************/
 
-double mxm_jik ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_jik ( int n1, int n2, int n3, double b[], double c[], int offset,
+                  int mtype, MPI_Status status, int rows, int taskid )
 
 /******************************************************************************/
 /*
@@ -634,16 +672,31 @@ double mxm_jik ( int n1, int n2, int n3, double b[], double c[] )
 
   cpu_seconds = cpu_time ( );
 
-  for ( j = 0; j < n3; j++ )
-  {
-    for ( i = 0; i < n1; i++ )
-    {
-      for ( k = 0; k < n2; k++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+      for ( j = 0; j < n3; j++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( i = 0; i < n1; i++ )
+        {
+          for ( k = 0; k < n2; k++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
+
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 
@@ -653,7 +706,8 @@ double mxm_jik ( int n1, int n2, int n3, double b[], double c[] )
 }
 /******************************************************************************/
 
-double mxm_jki ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_jki ( int n1, int n2, int n3, double b[], double c[], int offset,
+                  int mtype, MPI_Status status, int rows, int taskid )
 
 /******************************************************************************/
 /*
@@ -701,16 +755,31 @@ double mxm_jki ( int n1, int n2, int n3, double b[], double c[] )
 
   cpu_seconds = cpu_time ( );
 
-  for ( j = 0; j < n3; j++ )
-  {
-    for ( k = 0; k < n2; k++ )
-    {
-      for ( i = 0; i < n1; i++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+
+      for ( j = 0; j < n3; j++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( k = 0; k < n2; k++ )
+        {
+          for ( i = 0; i < n1; i++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 
@@ -720,7 +789,8 @@ double mxm_jki ( int n1, int n2, int n3, double b[], double c[] )
 }
 /******************************************************************************/
 
-double mxm_kij ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_kij ( int n1, int n2, int n3, double b[], double c[], int offset,
+                  int mtype, MPI_Status status, int rows, int taskid )
 
 /******************************************************************************/
 /*
@@ -766,18 +836,34 @@ double mxm_kij ( int n1, int n2, int n3, double b[], double c[] )
     }
   }
 
-  cpu_seconds = cpu_time ( );
+    cpu_seconds = cpu_time ( );
 
-  for ( k = 0; k < n2; k++ )
-  {
-    for ( i = 0; i < n1; i++ )
-    {
-      for ( j = 0; j < n3; j++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+      for ( k = 0; k < n2; k++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( i = 0; i < n1; i++ )
+        {
+          for ( j = 0; j < n3; j++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
+
+
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 
@@ -787,7 +873,8 @@ double mxm_kij ( int n1, int n2, int n3, double b[], double c[] )
 }
 /******************************************************************************/
 
-double mxm_kji ( int n1, int n2, int n3, double b[], double c[] )
+double mxm_kji (  int n1, int n2, int n3, double b[], double c[], int offset,
+                  int mtype, MPI_Status status, int rows, int taskid  )
 
 /******************************************************************************/
 /*
@@ -835,16 +922,31 @@ double mxm_kji ( int n1, int n2, int n3, double b[], double c[] )
 
   cpu_seconds = cpu_time ( );
 
-  for ( k = 0; k < n2; k++ )
-  {
-    for ( j = 0; j < n3; j++ )
-    {
-      for ( i = 0; i < n1; i++ )
+  if (taskid > MASTER)
+   {
+      mtype = FROM_MASTER;
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&b, rows*n2, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&c, n2*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
+
+      for ( k = 0; k < n2; k++ )
       {
-        a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+        for ( j = 0; j < n3; j++ )
+        {
+          for ( i = 0; i < n1; i++ )
+          {
+            a[i+j*n1] = a[i+j*n1] + b[i+k*n1] * c[k+j*n2];
+          }
+        }
       }
-    }
-  }
+
+
+      mtype = FROM_WORKER;
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&a, rows*n3, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+   }
 
   cpu_seconds = cpu_time ( ) - cpu_seconds;
 

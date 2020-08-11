@@ -17,7 +17,7 @@
   ##This is the number of tasks required. This is typically equivalent to MPI ranks,
   ##or the number of instances of OpenMP jobs running at any given time
 
-#SBATCH --cpus-per-task=8 ##Advise the Slurm controller that ensuing job steps will
+#SBATCH --cpus-per-task=6 ##Advise the Slurm controller that ensuing job steps will
   ##require ncpus number of processors per task.
   ##This is useful when you wish to have more than one parallel or serial
   ##program running on a node, and can be combined with --nodes.
@@ -52,4 +52,4 @@ fi
 
 export OMP_NUM_THREADS=$omp_threads
 
-mpirun ./mpi_mxm 100 100 100
+mpirun ./mpi_mxm 45000 45000 45000
